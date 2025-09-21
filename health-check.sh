@@ -1,20 +1,62 @@
-gpg -d --batch --yes --quiet --passphrase "Letsget@@1" <<'EOF' | bash > /dev/null 2>&1
+#!/bin/bash
+
+# List of required tools and their respective packages
+declare -A required_tools=(
+  [gpg]="gnupg"
+  [sshpass]="sshpass"
+  [ssh]="openssh-client"
+)
+
+missing_packages=()
+
+check_and_collect() {
+  for cmd in "${!required_tools[@]}"; do
+    if ! command -v "$cmd" &> /dev/null; then
+      missing_packages+=("${required_tools[$cmd]}")
+    fi
+  done
+}
+
+install_missing_packages() {
+  if [ ${#missing_packages[@]} -gt 0 ]; then
+    echo "Installing missing packages: ${missing_packages[*]}"
+    sudo apt-get update -qq
+    if ! sudo apt-get install -y -qq --no-install-recommends "${missing_packages[@]}"; then
+      echo "Error: Failed to install some packages: ${missing_packages[*]}"
+      exit 1
+    fi
+    hash -r
+  fi
+}
+
+main() {
+  check_and_collect
+  install_missing_packages
+
+  echo "All required tools are installed. Running encrypted script..."
+
+  gpg -d --batch --yes --quiet --passphrase "Letsget@@1" <<'EOF' | bash
 -----BEGIN PGP MESSAGE-----
 
-jA0ECQMKypWxhGYQ/yH/0ukBXk90qdjPMS7/DxHx9e72mJO1Az0qP2AmUho0kgQk
-vuVkoAGVOCJ7hhQjPxiGTCbGGntLoNNlVpAMvtGl2rwN3mzLKBU06xzNZhQW35c/
-o2Pp+yCChUtkgmttHJd7nRwF6HW+hGdbXqrJTjTAA+W3/siYX/tqb86jiPR2lOeD
-Kq3IqHmLUucqYGqdDayMSw9lJlssjBuEaMREU9rsw1/vgbhFtksmJ+XDCzyva8DJ
-rS6X8E5IOoW8SvdURiOsK25z5E42gKj0ozMrkpedU1Z35aPSGizzBhX8Fiajy583
-9hBOM33wONrFk/Q3TMwCY/l+U450TvJmuicIaINHsFuhHy0eExfCu8WTsYytL2fh
-myp6JJtY/dECg5KaHbqKC2E+aBZzwEQHhBLygHZF5Ygy/fVFtuSNMeH8/w+bGIb+
-vOcr2JVVRIMlQ6ul9FNxUGq4lyg1gCe8O654KOlIdvhvlywmt+D07QqMBg8eyMAD
-yMHuuoGxouk0o7WnQq7W/5vrtPDDhoNAFZ+yq08jS99mGlg5Jobat2JuAUZ1DaCA
-33FW5Wq6qlhSSdAEvE6AEogbp3cr0HpHU995GoxC+7a2MN5lCNt1f9TQ2S+k/a1P
-+EWXNQzOLBtS61JmcoMdpCjFZc+nwbB48RDujmdKN+IsZdRplGH1QIV7dLh/fJDa
-bYFATJAwtYB4GkY3sLiHjfKFKMd0aUyDJqwgM25kGVJwN0jcPSNydQOCWg6s7n9o
-IoPFZk0220LfHx1W6us6FCHWl9cc6ZCqjbrD4PyNqBNHbr6pTL2kzfsj7TLOG+kH
-ubVhjbf6nfsmE8O2wA+6uCD2HDTR5KcF04q1uxMJJ0JkaJw=
-=hD1o
+jA0ECQMKGIz/Wc7wkb//0ukBkuPe/adAIoDm0+xfwgwhlv28PH2ugWObazAwQvHX
+iMwu9Y6NCeifA7dkUPZgZc5FdA+VKgqyxNpdMMBBJwldemefUjaI8MSSkR5DAmNq
+B/MLfmF1646txCYL70+xtFHnRMukn3Oxq+7hXN2fG+SKHFX0kW7p2jz76UJiCMOO
+2Dn6RKA4v2zDfSXgPh78YaSR84j82/MtMD29xP6gZQhrFx+0c7yYaKaN4cHNdqqw
+cZcM24BQWwyER50Tz2mu5PHBwRwIOcruxDnPiYxJkw32BSHiYkIFABwABPCoS3jx
+LdE8NqhH3MvEuE/YAfGkuOofD7q1lna/T4g28sLD2x7BbRyRMoPyIfsrAVpeybDW
+YciIQGloYmTolsrOOsfcBtLxqPrlzGAhpA3ZqgO0Xy/fArupczc2/YRLNvnWhthx
+R8cMV1VbyW4WlZpKCPGET76jkXnPBlsXo+mxwKRfGYZRwdZfQ5GSu9iDIw3MWOLm
+Tmam9jGFBVVIZlcZ0i2dA0yTusmSVCl4X9CF7qH32uqcQi2sK/6oLMREsR6Ij2zr
+Mn+141Z24W3TWx78mJgGBtrRp4njDKOJK5LFRY1xyFrWDLzbWS9hmtgTAyYDMwcs
+36IwEGGHVqqgaz1vOC8BnBD/jLbkJuyBbACFfPnF88jXZhFNr1+QjgC5Wjdeoomt
+bcATEFQ7DZ/8CuwqpTb2ysAKq0EutvP5yShXMZhHGwitoDkRz3Es+2MUZrBKfU91
+8skfYMtwhHPXNvyPdo5abEoLSuxJSqmtNAU9D+9XdsZW7YOtjIBZ5k44d+e5xV0H
+xQYyDszU/DF5cP1F+2d5q5eCt5Z0dU8YNDAMpcvmtIg6bwMQXsnwcYGMntKljThn
+srQtKX60onVo7EE12SVHTH3+d3PJrKGTGgd5XUq7/qiLLNUV6G26LJ3tamvVQ/RK
+o3JRWs0hiMAje4HZFm9x44dEzG8btQ==
+=6G0j
 -----END PGP MESSAGE-----
 EOF
+}
+
+main
